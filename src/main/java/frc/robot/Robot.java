@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj.trajectory.TrajectoryGenerator;
 import java.util.List;
 
 public class Robot extends TimedRobot {
+  
   private final XboxController m_controller = new XboxController(0);
 
   // Slew rate limiters to make joystick inputs more gentle; 1/3 sec from 0
@@ -40,7 +41,7 @@ public class Robot extends TimedRobot {
 
     m_trajectory =
         TrajectoryGenerator.generateTrajectory(
-            new Pose2d(2, 2, new Rotation2d()),
+            new Pose2d(2, 3.7, new Rotation2d()),
             List.of(),
             new Pose2d(6, 4, new Rotation2d()),
             new TrajectoryConfig(2, 2));
@@ -55,6 +56,7 @@ public class Robot extends TimedRobot {
   public void autonomousInit() {
     m_timer.reset();
     m_timer.start();
+    
     m_drive.resetOdometry(m_trajectory.getInitialPose());
   }
 
@@ -91,22 +93,23 @@ public class Robot extends TimedRobot {
 
     double degrees = 0;
 
-        if (x == 0) {
-            degrees = (y < 0) ? 270 : 90;
-        } else {
-            degrees = Math.toDegrees(Math.atan(y / x));
+    if (x == 0) {
+        degrees = (y < 0) ? 270 : 90;
+    } else {
+        degrees = Math.toDegrees(Math.atan(y / x));
 
-            if (y == 0) {
-                degrees = (x < 0) ? 180 : 0;
-            }
+        if (y == 0) {
+            degrees = (x < 0) ? 180 : 0;
         }
+    }
 
+    if (x < 0) {
+        degrees += 180;
+    } else if (y < 0) {
+        degrees += 360;
+    }
 
-        if (x < 0) {
-            degrees += 180;
-        } else if (y < 0) {
-            degrees += 360;
-        }
+    degrees -= 90;
 
     m_drive.drive(speed, degrees, 0);
 

@@ -11,26 +11,18 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj.controller.SimpleMotorFeedforward;
-import edu.wpi.first.wpilibj.estimator.DifferentialDrivePoseEstimator;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
 import edu.wpi.first.wpilibj.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.geometry.Translation2d;
 import edu.wpi.first.wpilibj.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.kinematics.DifferentialDriveKinematics;
-import edu.wpi.first.wpilibj.kinematics.DifferentialDriveOdometry;
-import edu.wpi.first.wpilibj.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.wpilibj.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.wpilibj.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.wpilibj.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.simulation.AnalogGyroSim;
-import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
 import edu.wpi.first.wpilibj.simulation.EncoderSim;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.system.LinearSystem;
-import edu.wpi.first.wpilibj.system.plant.DCMotor;
-import edu.wpi.first.wpilibj.system.plant.LinearSystemId;
-import edu.wpi.first.wpiutil.math.numbers.N2;
 
 @SuppressWarnings("PMD.TooManyFields")
 public class Drivetrain {
@@ -55,9 +47,6 @@ public class Drivetrain {
 
   private final Encoder m_leftEncoder = new Encoder(0, 1);
   private final Encoder m_rightEncoder = new Encoder(2, 3);
-
-  private final PIDController m_leftPIDController = new PIDController(8.5, 0, 0);
-  private final PIDController m_rightPIDController = new PIDController(8.5, 0, 0);
 
   private final AnalogGyro m_gyro = new AnalogGyro(0);
 
@@ -84,6 +73,8 @@ public class Drivetrain {
     m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation
   );
 
+  double distanceTravelledInMeters = 0;
+
   private final SwerveDriveOdometry s_odometry = new SwerveDriveOdometry(s_kinematics, m_gyro.getRotation2d());
  
 
@@ -102,7 +93,9 @@ public class Drivetrain {
   }
 
   public void drive(double speed, double theta, double rotation) {
-    s_moduleState.speedMetersPerSecond = m_kinematics.toWheelSpeeds(new ChassisSpeeds(speed, 0, 0)).leftMetersPerSecond;
+    double distanceInMeter = m_kinematics.toWheelSpeeds(new ChassisSpeeds(speed, 0, 0)).leftMetersPerSecond;
+    distanceTravelledInMeters += distanceInMeter * .02;
+    s_moduleState.speedMetersPerSecond = distanceInMeter;
     s_moduleState.angle = Rotation2d.fromDegrees(theta);
   }
 
@@ -122,6 +115,7 @@ public class Drivetrain {
     s_odometry.resetPosition(pose, m_gyro.getRotation2d());
     s_moduleState.angle = Rotation2d.fromDegrees(0);
     s_moduleState.speedMetersPerSecond = 0;
+    distanceTravelledInMeters = 0;
   }
 
   public Pose2d getPose() {
@@ -144,6 +138,7 @@ public class Drivetrain {
     // m_rightEncoderSim.setDistance(m_drivetrainSimulator.getRightPositionMeters());
     // m_rightEncoderSim.setRate(m_drivetrainSimulator.getRightVelocityMetersPerSecond());
     // m_gyroSim.setAngle(-m_drivetrainSimulator.getHeading().getDegrees());
+    SmartDashboard.putNumber("Distance travelled", distanceTravelledInMeters);
   }
 
   public void periodic() {
